@@ -1,5 +1,4 @@
-"""Django Endless Pagination template tags."""
-from __future__ import unicode_literals
+"""Django EL(Endless) Pagination template tags."""
 
 import re
 
@@ -12,7 +11,10 @@ from el_pagination.paginators import DefaultPaginator, EmptyPage, LazyPaginator
 
 register = template.Library()
 
-PAGINATE_EXPRESSION = re.compile(r"""
+__all__ = ['register']
+
+PAGINATE_EXPRESSION = re.compile(
+    r"""
     ^   # Beginning of line.
     (((?P<first_page>\w+)\,)?(?P<per_page>\w+(\.\w+)?)\s+)?  # First page, per page.
     (?P<objects>[\.\w]+)  # Objects / queryset.
@@ -21,15 +23,20 @@ PAGINATE_EXPRESSION = re.compile(r"""
     (\s+with\s+(?P<override_path>[\"\'\/\w]+))?  # Override path.
     (\s+as\s+(?P<var_name>\w+))?  # Context variable name.
     $   # End of line.
-""", re.VERBOSE)
+""",
+    re.VERBOSE,
+)
 
-SHOW_CURRENT_NUMBER_EXPRESSION = re.compile(r"""
+SHOW_CURRENT_NUMBER_EXPRESSION = re.compile(
+    r"""
     ^   # Beginning of line.
     (starting\s+from\s+page\s+(?P<number>\w+))?\s*  # Page start.
     (using\s+(?P<key>[\"\'\-\w]+))?\s*  # Querystring key.
     (as\s+(?P<var_name>\w+))?  # Context variable name.
     $   # End of line.
-""", re.VERBOSE)
+""",
+    re.VERBOSE,
+)
 
 
 @register.tag
@@ -146,14 +153,15 @@ def paginate(parser, token, paginator_class=None):
     # Validate arguments.
     try:
         tag_name, tag_args = token.contents.split(None, 1)
-    except ValueError:
-        msg = '%r tag requires arguments' % token.contents.split()[0]
-        raise template.TemplateSyntaxError(msg)
+    except ValueError as exc:
+        tag = token.contents.split()[0]
+        msg = f'{tag!r} tag requires arguments'
+        raise template.TemplateSyntaxError(msg) from exc
 
     # Use a regexp to catch args.
     match = PAGINATE_EXPRESSION.match(tag_args)
     if match is None:
-        msg = 'Invalid arguments for %r tag' % tag_name
+        msg = f'Invalid arguments for {tag_name!r} tag'
         raise template.TemplateSyntaxError(msg)
 
     # Retrieve objects.
@@ -195,8 +203,16 @@ class PaginateNode(template.Node):
     """
 
     def __init__(
-            self, paginator_class, objects, first_page=None, per_page=None,
-            var_name=None, number=None, key=None, override_path=None):
+        self,
+        paginator_class,
+        objects,
+        first_page=None,
+        per_page=None,
+        var_name=None,
+        number=None,
+        key=None,
+        override_path=None,
+    ):
         self.paginator = paginator_class or DefaultPaginator
         self.objects = template.Variable(objects)
 
@@ -246,7 +262,9 @@ class PaginateNode(template.Node):
 
         if override_path is None:
             self.override_path = None
-        elif override_path[0] in ('"', "'") and override_path[-1] == override_path[0]:  # noqa
+        elif (
+            override_path[0] in ('"', "'") and override_path[-1] == override_path[0]
+        ):  # noqa
             self.override_path = override_path[1:-1]
         else:
             self.override_path_variable = template.Variable(override_path)
@@ -286,16 +304,19 @@ class PaginateNode(template.Node):
         # Retrieve the queryset and create the paginator object.
         objects = self.objects.resolve(context)
         paginator = self.paginator(
-            objects, per_page, first_page=first_page, orphans=settings.ORPHANS)
+            objects, per_page, first_page=first_page, orphans=settings.ORPHANS
+        )
 
         # Normalize the default page number if a negative one is provided.
         if default_number < 0:
             default_number = utils.normalize_page_number(
-                default_number, paginator.page_range)
+                default_number, paginator.page_range
+            )
 
         # The current request is used to get the requested page number.
         page_number = utils.get_page_number_from_request(
-            context['request'], querystring_key, default=default_number)
+            context['request'], querystring_key, default=default_number
+        )
 
         # Get the page.
         try:
@@ -303,7 +324,7 @@ class PaginateNode(template.Node):
         except EmptyPage:
             page = paginator.page(1)
             if settings.PAGE_OUT_OF_RANGE_404:
-                raise Http404('Page out of range')
+                raise Http404('Page out of range')  # pylint: disable=raise-missing-from
 
         # Populate the context with required data.
         data = {
@@ -349,8 +370,8 @@ def show_more(context, label=None, loading=settings.LOADING, class_name=None):
         # Generate the querystring.
         querystring_key = data['querystring_key']
         querystring = utils.get_querystring_for_page(
-            request, page_number, querystring_key,
-            default_number=data['default_number'])
+            request, page_number, querystring_key, default_number=data['default_number']
+        )
         return {
             'label': label,
             'loading': loading,
@@ -362,6 +383,23 @@ def show_more(context, label=None, loading=settings.LOADING, class_name=None):
         }
     # No next page, nothing to see.
     return {}
+
+
+@register.inclusion_tag('el_pagination/show_more_table.html', takes_context=True)
+def show_more_table(context, label=None, loading=settings.LOADING):
+    """Show the link to get the next page in a Twitter-like pagination in a
+    template for table.
+    Usage::
+        {% show_more_table %}
+    Alternatively you can override the label passed to the default template::
+        {% show_more_table "even more" %}
+    You can override the loading text too::
+        {% show_more_table "even more" "working" %}
+    Must be called after ``{% paginate objects %}``.
+    """
+    # This template tag could raise a PaginationError: you have to call
+    # *paginate* or *lazy_paginate* before including the showmore template.
+    return show_more(context, label, loading)
 
 
 @register.tag
@@ -484,7 +522,7 @@ def get_pages(parser, token):
         if len(args) == 2 and args[0] == 'as':
             var_name = args[1]
         else:
-            msg = 'Invalid arguments for %r tag' % tag_name
+            msg = f'Invalid arguments for {tag_name!r} tag'
             raise template.TemplateSyntaxError(msg)
     # Call the node.
     return GetPagesNode(var_name)
@@ -540,8 +578,8 @@ def show_pages(parser, token):
     """
     # Validate args.
     if len(token.contents.split()) != 1:
-        msg = '%r tag takes no arguments' % token.contents.split()[0]
-        raise template.TemplateSyntaxError(msg)
+        tag = token.contents.split()[0]
+        raise template.TemplateSyntaxError(f'{tag!r} tag takes no arguments')
     # Call the node.
     return ShowPagesNode()
 
@@ -560,7 +598,7 @@ class ShowPagesNode(template.Node):
             data['querystring_key'],
             default_number=data['default_number'],
             override_path=data['override_path'],
-            context=context
+            context=context,
         )
         return pages.get_rendered()
 
@@ -628,7 +666,7 @@ def show_current_number(parser, token):
         # Use a regexp to catch args.
         match = SHOW_CURRENT_NUMBER_EXPRESSION.match(args)
         if match is None:
-            msg = 'Invalid arguments for %r tag' % tag_name
+            msg = f'Invalid arguments for {tag_name!r} tag'
             raise template.TemplateSyntaxError(msg)
         # Retrieve objects.
         groupdict = match.groupdict()
@@ -680,7 +718,8 @@ class ShowCurrentNumberNode(template.Node):
 
         # The request object is used to retrieve the current page number.
         page_number = utils.get_page_number_from_request(
-            context['request'], querystring_key, default=default_number)
+            context['request'], querystring_key, default=default_number
+        )
 
         if self.var_name is None:
             return force_str(page_number)

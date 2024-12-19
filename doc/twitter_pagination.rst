@@ -13,7 +13,7 @@ entries of a blog post, in *views.py* we have class-based::
         def get_queryset(self):
             return Entry.objects.all()
 
-or fuction-based::
+or function-based::
 
     def entry_index(request, template='myapp/entry_list.html'):
         context = {
@@ -55,7 +55,7 @@ to put the page template name in the context.
         def get_queryset(self):
             return Entry.objects.all()
 
-or fuction-based::
+or function-based::
 
     def entry_list(request,
         template='myapp/entry_list.html',
@@ -248,7 +248,7 @@ just use the *paginateOnScrollChunkSize* option:
 Specifying where the content will be inserted
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you are paginating a table, you may want to include the *show_more* link
+If you are paginating a table, you can use :ref:`templatetags-show-more-table` or you may want to include the *show_more* link
 after the table itself, but the loaded content should be placed inside the
 table.
 

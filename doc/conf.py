@@ -1,29 +1,44 @@
 """Django EL(Endless) Pagination documentation build configuration file."""
 
-from __future__ import unicode_literals
+import os
+import sys
 
-AUTHOR = 'Oleksandr Shtalinberg and Francesco Banconi'
+sys.path.insert(0, os.path.abspath('..'))
+
+
+AUTHOR = 'Francesco Banconi, Oleksandr Shtalinberg'
 APP = 'Django EL(Endless) Pagination'
 TITLE = APP + ' Documentation'
-VERSION = '3.3.0'
+VERSION = '4.2.0'
+
+# General information about the project.
+project = APP
+copyright = '2009-2024, ' + AUTHOR
+author = 'Oleksandr Shtalinberg'
 
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = []
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.viewcode',
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
+exclude_patterns = [
+    '_build',
+    'Thumbs.db',
+    '.DS_Store',
+    '_static/TRACKME',  # Exclude the TRACKME file from processing
+]
 
 # The suffix of source filenames.
 source_suffix = '.rst'
 
 # The master toctree document.
 master_doc = 'index'
-
-# General information about the project.
-project = APP
-copyright = '2009-2020, ' + AUTHOR
 
 # The short X.Y version.
 version = release = VERSION
@@ -37,12 +52,29 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'default'
+html_theme = 'sphinx_rtd_theme'
+html_theme_options = {
+    'navigation_depth': 4,
+    'collapse_navigation': False,
+    'sticky_navigation': True,
+    'includehidden': True,
+    'titles_only': False,
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+epub_exclude_files = [
+    '_static/TRACKME',
+    'search.html',
+    '_static/websupport.js',
+]
+# -- Epub options ---------------------------------------------------------
+epub_show_urls = 'footnote'
+epub_tocdepth = 3
+epub_tocdup = True
+epub_guide = (('toc', 'index.html', 'Table of Contents'),)
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'DjangoELPaginationdoc'
@@ -55,3 +87,12 @@ latex_documents = [(
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [('index', 'djangoelpagination', TITLE, [AUTHOR], 1)]
+
+# Intersphinx configuration
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
+    'django': (
+        'https://docs.djangoproject.com/en/stable/',
+        'https://docs.djangoproject.com/en/stable/_objects/',
+    ),
+}

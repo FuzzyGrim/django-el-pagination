@@ -1,82 +1,68 @@
 # Django Endless Pagination Makefile.
 
 # Define these variables based on the system Python versions.
-PYTHON3 = python3
-VENV3 = .venv3
+PYTHON ?= python3
 
-LINTER = flake8 --show-source endless_pagination/ tests/
-MANAGE = python ./tests/manage.py
-
-PYTHON = $(PYTHON3)
-VENV = $(VENV3)
-
-DOC_INDEX = doc/_build/html/index.html
-VENV_ACTIVATE = $(VENV)/bin/activate
+VENV = .venv
 WITH_VENV = ./tests/with_venv.sh $(VENV)
+MANAGE = $(PYTHON) ./tests/manage.py
+LINTER = flake8 --show-source el_pagination/ tests/
+DOC_INDEX = doc/_build/html/index.html
+
+.PHONY: all clean cleanall check develop help install lint doc opendoc release server shell source test
 
 all: develop
 
+# Virtual environment
+$(VENV)/bin/activate: tests/develop.py tests/requirements.pip
+	@$(PYTHON) tests/develop.py
+	@touch $(VENV)/bin/activate
+	$(VENV)/bin/pip install --upgrade pip setuptools wheel
+	$(VENV)/bin/pip install -r tests/requirements.pip
+
+develop: $(VENV)/bin/activate
+	$(VENV)/bin/pip install -e .
+
+# Documentation
 $(DOC_INDEX): $(wildcard doc/*.rst)
 	@$(WITH_VENV) make -C doc html
 
 doc: develop $(DOC_INDEX)
 
 clean:
-	$(PYTHON) setup.py clean
-	rm -rfv .coverage build/ dist/ doc/_build MANIFEST
+	pip uninstall django-el-pagination -y || true
+	rm -rf .coverage build/ dist/ doc/_build MANIFEST *.egg-info
 	find . -name '*.pyc' -delete
 	find . -name '__pycache__' -type d -delete
 
 cleanall: clean
-	rm -rfv $(VENV2) $(VENV3)
+	rm -rf $(VENV)
 
 check: test lint
 
-$(VENV_ACTIVATE): tests/develop.py tests/requirements.pip
-	@$(PYTHON) tests/develop.py
-	@touch $(VENV_ACTIVATE)
-
-develop: $(VENV_ACTIVATE)
-
-help:
-	@echo -e 'Django Endless Pagination - list of make targets:\n'
-	@echo 'make - Set up development and testing environment'
-	@echo 'make test - Run tests'
-	@echo 'make lint - Run linter and pep8'
-	@echo 'make check - Run tests, linter and pep8'
-	@echo 'make doc - Build Sphinx documentation'
-	@echo 'make opendoc - Build Sphinx documentation and open it in browser'
-	@echo 'make source - Create source package'
-	@echo 'make install - Install on local system'
-	@echo 'make shell - Enter Django interactive interpreter'
-	@echo 'make server - Run Django development server'
-	@echo 'make clean - Get rid of bytecode files, build dirs, dist files'
-	@echo 'make cleanall - Clean and also get rid of the virtualenvs'
-	@echo -e '\nDefine the env var PY3 to work using Python 3.'
-	@echo 'E.g. to create a Python 3 development environment:'
-	@echo '  - make PY3=1'
-	@echo 'E.g. to run tests and linter under Python 3:'
-	@echo '  - make check PY3=1'
-	@echo -e '\nWhen testing the application, define the env var'
-	@echo 'SKIP_SELENIUM to exclude integration tests, e.g.:'
-	@echo '  - make check SKIP_SELENIUM=1'
-	@echo -e '\nWhen running integration tests, by default all graphical'
-	@echo 'operations are performed in memory where possible. However,'
-	@echo 'it is possible to run tests using a visible browser instance'
-	@echo 'by defining the env var SHOW_BROWSER, e.g.:'
-	@echo '  - make check SHOW_BROWSER=1'
-
 install:
-	python setup.py install
+	pip install --force-reinstall -e .
 
 lint: develop
 	@$(WITH_VENV) $(LINTER)
 
+black: develop
+	@echo "***  Black - Reformat pycode ***"
+	@echo ""
+	@$(WITH_VENV) black el_pagination/ tests/
+
+black_diff: develop
+	@echo "*** Black - Show pycode diff ***"
+	@echo ""
+	black --diff --check --color el_pagination/ tests/
+
+pylint: develop
+	@echo "Running pylint"
+	pylint --rcfile=.pylintrc el_pagination/ tests/
+	@echo "Finish pylint"
+
 opendoc: doc
 	@firefox $(DOC_INDEX)
-
-release: clean
-	python setup.py register sdist upload
 
 server: develop
 	@$(WITH_VENV) $(MANAGE) runserver 0.0.0.0:8000
@@ -90,5 +76,70 @@ source:
 test: develop
 	@$(WITH_VENV) $(MANAGE) test
 
-.PHONY: all doc clean cleanall check develop install lint opendoc release \
-	server shell source test
+build-dist: clean develop
+	@echo "Installing build dependencies..."
+	$(VENV)/bin/pip install build twine
+	@echo "Building distribution..."
+	$(VENV)/bin/python -m build
+
+check-dist: build-dist
+	@echo "Checking distribution..."
+	$(VENV)/bin/twine check dist/*
+
+upload-dist: check-dist
+	@echo "Uploading to PyPI..."
+	$(VENV)/bin/twine upload dist/*
+
+release: clean develop
+	@echo "Starting release process..."
+	@if [ -z "$$SKIP_CONFIRMATION" ]; then \
+		read -p "Are you sure you want to release to PyPI? [y/N] " confirm; \
+		if [ "$$confirm" != "y" ]; then \
+			echo "Release cancelled."; \
+			exit 1; \
+		fi \
+	fi
+	$(MAKE) build-dist
+	$(MAKE) check-dist
+	@echo "Ready to upload to PyPI..."
+	@if [ -z "$$SKIP_CONFIRMATION" ]; then \
+		read -p "Proceed with upload? [y/N] " confirm; \
+		if [ "$$confirm" != "y" ]; then \
+			echo "Upload cancelled."; \
+			exit 1; \
+		fi \
+	fi
+	$(MAKE) upload-dist
+	@echo "Release completed successfully!"
+
+
+help:
+	@echo 'Django Endless Pagination - Available commands:'
+	@echo
+	@echo 'Development:'
+	@echo '  make          - Set up development environment'
+	@echo '  make install  - Install package locally'
+	@echo '  make server   - Run development server'
+	@echo '  make shell    - Enter Django shell'
+	@echo
+	@echo 'Testing:'
+	@echo '  make test     - Run tests'
+	@echo '  make lint     - Run code linting'
+	@echo '  make check    - Run tests and linting'
+	@echo
+	@echo 'Documentation:'
+	@echo '  make doc      - Build documentation'
+	@echo '  make opendoc  - Build and open documentation'
+	@echo
+	@echo 'Cleaning:'
+	@echo '  make clean    - Remove build artifacts'
+	@echo '  make cleanall - Remove all generated files including venv'
+	@echo
+	@echo 'Distribution:'
+	@echo '  make source   - Create source package'
+	@echo '  make release  - Upload to PyPI'
+	@echo
+	@echo 'Environment Variables:'
+	@echo '  USE_SELENIUM=1    - Include integration tests'
+	@echo '  SHOW_BROWSER=1    - Show browser during Selenium tests'
+	@echo

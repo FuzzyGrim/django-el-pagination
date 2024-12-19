@@ -1,6 +1,6 @@
 """Twitter-style pagination integration tests."""
 
-from __future__ import unicode_literals
+
 
 from el_pagination.tests.integration import SeleniumTestCase
 
@@ -46,3 +46,9 @@ class TwitterPaginationTest(SeleniumTestCase):
         # Ensure there is no more link on the last page.
         self.get(page=10)
         self.asserLinksEqual(0, self.MORE)
+
+
+class TwitterPaginationTableTest(TwitterPaginationTest):
+
+    view_name = 'twitter-table'
+    selector = 'tr.{0} td > h4'

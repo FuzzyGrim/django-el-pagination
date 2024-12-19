@@ -1,5 +1,4 @@
 """Ephemeral models used to represent a page and a list of pages."""
-from __future__ import unicode_literals
 
 from django.template import loader
 from django.utils.encoding import force_str, iri_to_uri
@@ -10,7 +9,7 @@ from el_pagination import loaders, settings, utils
 _template_cache = {}
 
 
-class ELPage(object):
+class ELPage:
     """A page link representation.
 
     Interesting attributes:
@@ -27,9 +26,17 @@ class ELPage(object):
     """
 
     def __init__(
-            self, request, number, current_number, total_number,
-            querystring_key, label=None, default_number=1, override_path=None,
-            context=None):
+        self,
+        request,
+        number,
+        current_number,
+        total_number,
+        querystring_key,
+        label=None,
+        default_number=1,
+        override_path=None,
+        context=None,
+    ):
         self._request = request
         self.number = number
         self.label = force_str(number) if label is None else label
@@ -45,12 +52,10 @@ class ELPage(object):
             self.is_next = label and number == current_number + 1
 
         self.url = utils.get_querystring_for_page(
-            request, number,
-            self.querystring_key,
-            default_number=default_number
+            request, number, self.querystring_key, default_number=default_number
         )
         path = iri_to_uri(override_path or request.path)
-        self.path = '{0}{1}'.format(path, self.url)
+        self.path = f"{path}{self.url}"
 
     def render_link(self):
         """Render the page as a link."""
@@ -75,12 +80,18 @@ class ELPage(object):
             return template.render(self.context.flatten())
 
 
-class PageList(object):
+class PageList:
     """A sequence of endless pages."""
 
     def __init__(
-            self, request, page, querystring_key, context,
-            default_number=None, override_path=None):
+        self,
+        request,
+        page,
+        querystring_key,
+        context,
+        default_number=None,
+        override_path=None,
+    ):
         self._request = request
         self._page = page
         self.context = context
@@ -107,18 +118,18 @@ class PageList(object):
             label=label,
             default_number=self._default_number,
             override_path=self._override_path,
-            context=self.context
+            context=self.context,
         )
 
     def __getitem__(self, value):
         # The type conversion is required here because in templates Django
-        # performs a dictionary lookup before the attribute lokups
+        # performs a dictionary lookup before the attribute lookups
         # (when a dot is encountered).
         try:
             value = int(value)
-        except (TypeError, ValueError):
+        except (TypeError, ValueError) as exc:
             # A TypeError says to django to continue with an attribute lookup.
-            raise TypeError
+            raise TypeError from exc
         if 1 <= value <= len(self):
             return self._endless_page(value)
         raise IndexError('page list index out of range')
@@ -239,8 +250,8 @@ class PageList(object):
         """
         if self._page.has_previous():
             return self._endless_page(
-                self._page.previous_page_number(),
-                label=settings.PREVIOUS_LABEL)
+                self._page.previous_page_number(), label=settings.PREVIOUS_LABEL
+            )
         return ''
 
     def next(self):
@@ -251,8 +262,8 @@ class PageList(object):
         """
         if self._page.has_next():
             return self._endless_page(
-                self._page.next_page_number(),
-                label=settings.NEXT_LABEL)
+                self._page.next_page_number(), label=settings.NEXT_LABEL
+            )
         return ''
 
     def paginated(self):

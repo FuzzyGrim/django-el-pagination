@@ -6,18 +6,14 @@ Here are the steps needed to set up a development and testing environment.
 Creating a development environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The development environment is created in a virtualenv. The environment
-creation requires the *make* and *virtualenv* programs to be installed.
+The development environment is created in a venv. The environment
+creation requires the *make* program to be installed.
 
 To install *make* under Debian/Ubuntu::
 
     $ sudo apt-get install build-essential
 
 Under Mac OS/X, *make* is available as part of XCode.
-
-To install virtualenv::
-
-    $ sudo pip install virtualenv
 
 At this point, from the root of this branch, run the command::
 
@@ -34,14 +30,14 @@ Run the tests::
 
     $ make test
 
-The command above also runs all the available integration tests. They use
-Selenium and require Firefox to be installed. To avoid executing integration
-tests, define the environment variable SKIP_SELENIUM, e.g.::
+The command above also runs all tests except the available integration. They use
+Selenium and require Firefox to be installed. To include executing integration
+tests, define the environment variable USE_SELENIUM, e.g.::
 
-    $ make test SKIP_SELENIUM=1
+    $ make test USE_SELENIUM=1
 
 Integration tests are excluded by default when using Python 3. The test suite
-requires Python >= 2.6.6.
+requires Python >= 3.8.0.
 
 Run the tests and lint/pep8 checks::
 
@@ -49,7 +45,7 @@ Run the tests and lint/pep8 checks::
 
 Again, to exclude integration tests::
 
-    $ make check SKIP_SELENIUM=1
+    $ make check USE_SELENIUM=1
 
 Debugging
 ~~~~~~~~~

@@ -1,6 +1,6 @@
 """Endless template tags tests."""
 
-from __future__ import unicode_literals
+
 
 import string
 import sys
@@ -62,7 +62,7 @@ class EtreeTemplateTagsTestMixin(TemplateTagsTestMixin):
 
         Does not return the context.
         """
-        html, _ = super(EtreeTemplateTagsTestMixin, self).render(
+        html, _ = super().render(
             request, contents, **kwargs)
         if html:
             return etree.fromstring('<html>{0}</html>'.format(html))
@@ -97,7 +97,7 @@ class PaginateTestMixin(TemplateTagsTestMixin):
 
     def render(self, request, contents, **kwargs):
         text = string.Template(contents).substitute(tagname=self.tagname)
-        return super(PaginateTestMixin, self).render(request, text, **kwargs)
+        return super().render(request, text, **kwargs)
 
     def test_object_list(self):
         # Ensure the queryset is correctly updated.
@@ -357,10 +357,16 @@ class LazyPaginateTest(PaginateTestMixin, TestCase):
 @skip_if_old_etree
 class ShowMoreTest(EtreeTemplateTagsTestMixin, TestCase):
 
+    tagname = 'show_more'
+
+    def render(self, request, contents, **kwargs):
+        text = string.Template(contents).substitute(tagname=self.tagname)
+        return super(ShowMoreTest, self).render(request, text, **kwargs)
+
     def test_first_page_next_url(self):
         # Ensure the link to the next page is correctly generated
         # in the first page.
-        template = '{% paginate objects %}{% show_more %}'
+        template = '{% paginate objects %}{% $tagname %}'
         tree = self.render(self.request(), template)
         link = tree.find('.//a[@class="endless_more"]')
         expected = '/?{0}={1}'.format(settings.PAGE_LABEL, 2)
@@ -368,7 +374,7 @@ class ShowMoreTest(EtreeTemplateTagsTestMixin, TestCase):
 
     def test_page_next_url(self):
         # Ensure the link to the next page is correctly generated.
-        template = '{% paginate objects %}{% show_more %}'
+        template = '{% paginate objects %}{% $tagname %}'
         tree = self.render(self.request(page=3), template)
         link = tree.find('.//a[@class="endless_more"]')
         expected = '/?{0}={1}'.format(settings.PAGE_LABEL, 4)
@@ -376,23 +382,29 @@ class ShowMoreTest(EtreeTemplateTagsTestMixin, TestCase):
 
     def test_last_page(self):
         # Ensure the output for the last page is empty.
-        template = '{% paginate 40 objects %}{% show_more %}'
+        template = '{% paginate 40 objects %}{% $tagname %}'
         tree = self.render(self.request(page=2), template)
         self.assertIsNone(tree)
 
     def test_customized_label(self):
         # Ensure the link to the next page is correctly generated.
-        template = '{% paginate objects %}{% show_more "again and again" %}'
+        template = '{% paginate objects %}{% $tagname "again and again" %}'
         tree = self.render(self.request(), template)
         link = tree.find('.//a[@class="endless_more"]')
         self.assertEqual('again and again', link.text)
 
     def test_customized_loading(self):
         # Ensure the link to the next page is correctly generated.
-        template = '{% paginate objects %}{% show_more "more" "working" %}'
+        template = '{% paginate objects %}{% $tagname "more" "working" %}'
         tree = self.render(self.request(), template)
         loading = tree.find('.//*[@class="endless_loading"]')
         self.assertEqual('working', loading.text)
+
+
+@skip_if_old_etree
+class ShowMoreTableTest(ShowMoreTest):
+
+    tagname = 'show_more_table'
 
 
 class GetPagesTest(TemplateTagsTestMixin, TestCase):

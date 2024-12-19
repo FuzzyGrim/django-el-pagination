@@ -1,13 +1,57 @@
 Changelog
 =========
 
+Version 4.2.0
+~~~~~~~~~~~~~
+
+**New feature**: Django 5.1.x support.
+    Django EL(Endless) Pagination now supports Django from 4.2.x to 5.1.x
+    supports Python 3.8, 3.9, 3.10, 3.11, 3.12, 3.13 (only 5.1.x)
+
+**Source code validation**:
+    add black formatting rules
+    add pylint checks
+
+
+Version 4.1.2
+~~~~~~~~~~~~~
+
+**Fix**:  in 4.1.1 problem with loading template_tag
+
+
+Version 4.1.1
+~~~~~~~~~~~~~
+
+**Fix**:  fixed readthedocs documentation
+
+
+Version 4.1.0
+~~~~~~~~~~~~~
+
+**New feature**: Django 4.2.x, 5.x support.
+    Django EL(Endless) Pagination now supports Django 3.2.x, 4.2.x and 5.0
+    supports Python
+    Django Python versions
+    3.2	3.8, 3.9, 3.10 (added in 3.2.9)
+    4.2	3.8, 3.9, 3.10, 3.11, 3.12 (added in 4.2.8)
+    5.0	3.10, 3.11, 3.12
+
+
+Version 4.0.0
+~~~~~~~~~~~~~
+
+**New feature**: Django 4.1.x support.
+    Django EL(Endless) Pagination now supports Django from 3.2.x to 4.1.x
+    supports Python 3.8, 3.9, 3.10
+
 
 Version 3.3.0
 ~~~~~~~~~~~~~
 
 **New feature**: Django 3.0.x support.
     Django EL(Endless) Pagination now supports Django from 1.11.x to 3.0.x
-    Dropped support for Python 2.x 
+    Dropped support for Python 2.x
+
 
 Version 3.2.4
 ~~~~~~~~~~~~~
@@ -22,11 +66,13 @@ Bug-fix release
 **Fix**: cycle in show_pages with django 2.0
 fix tests for PageList.get_rendered()
 
+
 Version 3.2.2
 ~~~~~~~~~~~~~
 Bug-fix release
 
 **Fix**: fix UnicodeEncodeError with translate in templates
+
 
 Version 3.2.0
 ~~~~~~~~~~~~~
@@ -56,6 +102,7 @@ Version 3.2.0
 **Cleanup**:
 utils.UnicodeMixin
 utils.text
+
 
 Version 3.1.0
 ~~~~~~~~~~~~~
